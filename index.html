@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shaka Player - DASH DRM</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.6/shaka-player.compiled.min.js"></script>
+</head>
+<body>
+
+    <video id="video" width="640" height="360" controls autoplay></video>
+
+    <script>
+        async function getLicenseUrl() {
+            try {
+                // Fetch DRM License from API
+                let response = await fetch("https://your-drm-api.com/getLicense", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "key": "7641daa5bacfbb61936c40a221c9e78e",
+                        "token": "5732dd242f28338e909dc06cb1a1e5a2"
+                    })
+                });
+
+                let data = await response.json();
+                return data.license_url; // Extract License URL from API Response
+            } catch (error) {
+                console.error("Error fetching license URL", error);
+                return null;
+            }
+        }
+
+        async function initPlayer() {
+            const video = document.getElementById('video');
+            const player = new shaka.Player(video);
+
+            if (!shaka.Player.isBrowserSupported()) {
+                console.error("Browser does not support Shaka Player!");
+                return;
+            }
+
+            const licenseUrl = await getLicenseUrl();
+            if (!licenseUrl) {
+                console.error("Failed to get license URL from DRM API");
+                return;
+            }
+
+            // Configure DRM settings
+            player.configure({
+                drm: {
+                    servers: {
+                        'com.widevine.alpha': licenseUrl
+                    }
+                }
+            });
+
+            try {
+                await player.load('https://live1.shoq.com.pk/live/eds/Geo_Super/DASH/Geo_Super.mpd');
+                console.log("The video has been loaded!");
+            } catch (e) {
+                console.error("Error loading video", e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initPlayer);
+    </script>
+
+</body>
+</html>
